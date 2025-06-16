@@ -19,8 +19,14 @@ const NEON_COLORS = [
   '#FFD700', // Electric gold
 ]
 
-// Shape types for alien terrain
-const SHAPE_TYPES = ['ring', 'torus', 'cylinder']
+// Shape types for alien terrain - comprehensive Three.js geometry collection
+const SHAPE_TYPES = [
+  'ring', 'torus', 'cylinder',           // Original shapes
+  'box', 'sphere', 'cone',               // Basic primitives
+  'tetrahedron', 'octahedron',           // Platonic solids
+  'dodecahedron', 'icosahedron',         // More platonic solids
+  'torusKnot', 'capsule'                 // Complex shapes
+]
 
 function AlienShape({ 
   position, 
@@ -47,6 +53,7 @@ function AlienShape({
     const size = 1.5 + Math.random() * 2 // Shape size variation (increased minimum)
     
     switch (shapeType) {
+      // Original shapes
       case 'ring':
         // Use a thin torus instead of flat ring to avoid disappearing
         return new THREE.TorusGeometry(size, Math.max(0.2, size * 0.15), 8, 16)
@@ -61,7 +68,67 @@ function AlienShape({
           Math.max(1.0, size * 1.2), 
           12
         )
+      
+      // Basic primitives
+      case 'box':
+        // Cube with slight variations in dimensions
+        const width = Math.max(0.8, size * 0.8)
+        const height = Math.max(0.8, size * (0.6 + Math.random() * 0.8))
+        const depth = Math.max(0.8, size * 0.8)
+        return new THREE.BoxGeometry(width, height, depth)
+      
+      case 'sphere':
+        // Sphere with good detail
+        return new THREE.SphereGeometry(Math.max(0.5, size * 0.6), 16, 12)
+      
+      case 'cone':
+        // Cone with substantial base and height
+        return new THREE.ConeGeometry(
+          Math.max(0.4, size * 0.5), 
+          Math.max(1.0, size * 1.2), 
+          12
+        )
+      
+      // Platonic solids
+      case 'tetrahedron':
+        // 4-sided polyhedron
+        return new THREE.TetrahedronGeometry(Math.max(0.8, size * 0.8))
+      
+      case 'octahedron':
+        // 8-sided polyhedron
+        return new THREE.OctahedronGeometry(Math.max(0.8, size * 0.8))
+      
+      case 'dodecahedron':
+        // 12-sided polyhedron
+        return new THREE.DodecahedronGeometry(Math.max(0.7, size * 0.7))
+      
+      case 'icosahedron':
+        // 20-sided polyhedron
+        return new THREE.IcosahedronGeometry(Math.max(0.8, size * 0.8))
+      
+      // Complex shapes
+      case 'torusKnot':
+        // Twisted torus shape
+        return new THREE.TorusKnotGeometry(
+          Math.max(0.6, size * 0.6),     // radius
+          Math.max(0.2, size * 0.15),    // tube radius
+          64,                            // tubular segments
+          8,                             // radial segments
+          2 + Math.floor(Math.random() * 3), // p parameter (2-4)
+          3 + Math.floor(Math.random() * 4)  // q parameter (3-6)
+        )
+      
+      case 'capsule':
+        // Pill-shaped geometry (cylinder with hemispherical ends)
+        return new THREE.CapsuleGeometry(
+          Math.max(0.3, size * 0.4),    // radius
+          Math.max(0.8, size * 1.0),    // length
+          8,                            // cap segments
+          16                            // radial segments
+        )
+      
       default:
+        // Fallback to torus
         return new THREE.TorusGeometry(size, Math.max(0.3, size * 0.25), 8, 16)
     }
   }, [shapeType])
