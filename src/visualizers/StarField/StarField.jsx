@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react'
+import React, { useRef, useMemo, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -12,7 +12,7 @@ function StarField({
   randomColors = true,
   ...props 
 }) {
-  const pointsRef = useRef()
+  const meshRef = useRef()
   const { camera } = useThree()
   
   // Generate random star positions and colors
@@ -60,6 +60,44 @@ function StarField({
     return { starPositions: positions, starColors: colors }
   }, [starCount, spread, starColor, randomColors])
 
+  // Set up instanced mesh with positions and colors
+  useEffect(() => {
+    if (!meshRef.current) return
+
+    const dummy = new THREE.Object3D()
+    const tempColor = new THREE.Color()
+
+    // Set position and color for each star instance
+    for (let i = 0; i < starCount; i++) {
+      const i3 = i * 3
+      
+      // Set position
+      dummy.position.set(
+        starPositions[i3],
+        starPositions[i3 + 1], 
+        starPositions[i3 + 2]
+      )
+      
+      // Update the instance matrix
+      dummy.updateMatrix()
+      meshRef.current.setMatrixAt(i, dummy.matrix)
+      
+      // Set color for this instance
+      tempColor.setRGB(
+        starColors[i3],
+        starColors[i3 + 1],
+        starColors[i3 + 2]
+      )
+      meshRef.current.setColorAt(i, tempColor)
+    }
+    
+    // Mark for update
+    meshRef.current.instanceMatrix.needsUpdate = true
+    if (meshRef.current.instanceColor) {
+      meshRef.current.instanceColor.needsUpdate = true
+    }
+  }, [starCount, starPositions, starColors])
+
   // Animate camera movement through the star field (increased speed)
   useFrame((state) => {
     const time = state.clock.elapsedTime * speed * 0.8 // Increased from 0.5 to 0.8
@@ -98,37 +136,21 @@ function StarField({
     camera.lookAt(0, 0, 0)
     
     // Optional: Rotate the star field slightly for more dynamic effect (faster)
-    if (pointsRef.current) {
-      pointsRef.current.rotation.y = time * 0.03 // Increased from 0.02
-      pointsRef.current.rotation.x = time * 0.015 // Increased from 0.01
+    if (meshRef.current) {
+      meshRef.current.rotation.y = time * 0.03 // Increased from 0.02
+      meshRef.current.rotation.x = time * 0.015 // Increased from 0.01
     }
   })
 
   return (
-    <points ref={pointsRef} {...props}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          array={starPositions}
-          itemSize={3}
-          count={starCount}
-        />
-        <bufferAttribute
-          attach="attributes-color"
-          array={starColors}
-          itemSize={3}
-          count={starCount}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        size={starSize}
-        sizeAttenuation={true}
+    <instancedMesh ref={meshRef} args={[null, null, starCount]} {...props}>
+      {/* Sphere geometry for each star - small spheres with few segments for performance */}
+      <sphereGeometry args={[starSize * 0.1, 8, 6]} />
+      <meshBasicMaterial 
         transparent={true}
-        alphaTest={0.5}
         opacity={0.9}
-        vertexColors={true}
       />
-    </points>
+    </instancedMesh>
   )
 }
 
