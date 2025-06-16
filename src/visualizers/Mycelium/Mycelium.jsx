@@ -119,16 +119,15 @@ function Mycelium({
         
         instancedMeshRef.current.setMatrixAt(tubeIndex, matrix)
 
-        // Color based on generation (age of growth)
-        const colorIndex = particle.generation % NEON_COLORS.length
-        const color = new THREE.Color(NEON_COLORS[colorIndex])
-        
-        // Add some variation based on distance from center
-        const distanceFromCenter = midpoint.length()
-        const intensity = 0.7 + Math.sin(distanceFromCenter * 0.3) * 0.3
-        color.multiplyScalar(intensity)
-        
-        instancedMeshRef.current.setColorAt(tubeIndex, color)
+        // Set initial colors during growth (will be updated in useFrame when not growing)
+        if (isGrowing) {
+          const colorIndex = (particle.generation + particle.id) % NEON_COLORS.length
+          const color = new THREE.Color(NEON_COLORS[colorIndex])
+          const distanceFromCenter = midpoint.length()
+          const intensity = 0.7 + Math.sin(distanceFromCenter * 0.3) * 0.3
+          color.multiplyScalar(intensity)
+          instancedMeshRef.current.setColorAt(tubeIndex, color)
+        }
         tubeIndex++
       }
 
@@ -174,6 +173,64 @@ function Mycelium({
     
     // Always look at the center of the cluster
     camera.lookAt(0, 0, 0)
+
+    // Update colors with pulsating waves when growth is complete
+    if (!isGrowing && instancedMeshRef.current && cluster.length > 0) {
+      let tubeIndex = 0
+      
+      for (let i = 0; i < cluster.length; i++) {
+        const particle = cluster[i]
+        
+        // Skip root particle (has no parent to connect to)
+        if (particle.parent === null) continue
+
+        // Find parent particle
+        const parent = cluster.find(p => p.id === particle.parent)
+        if (!parent) continue
+
+        // Calculate midpoint for distance calculation
+        const startPos = parent.position
+        const endPos = particle.position
+        const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5)
+        const distanceFromCenter = midpoint.length()
+
+        // Color wave pulsing outward from center
+        const waveSpeed = 1.5 // Slower, smoother waves
+        const waveLength = 6.0 // Closer wave peaks for more detail
+        const currentTime = timeRef.current || 0
+        
+        // Calculate wave position - multiple waves for more dynamic effect
+        const primaryWave = (currentTime * waveSpeed) % (waveLength * 4) // Primary wave cycle
+        const secondaryWave = (currentTime * waveSpeed * 0.6) % (waveLength * 3) // Secondary wave
+        
+        // Calculate color based on distance relative to wave positions
+        const primaryPhase = Math.sin((distanceFromCenter - primaryWave) / waveLength * Math.PI * 2) * 0.7
+        const secondaryPhase = Math.sin((distanceFromCenter - secondaryWave) / waveLength * Math.PI * 1.8) * 0.3
+        const combinedPhase = (primaryPhase + secondaryPhase + 1.0) * 0.5 // Normalize to 0-1
+        
+        // Cycle through color palette based on wave phase
+        const colorIndex = Math.floor(combinedPhase * NEON_COLORS.length) % NEON_COLORS.length
+        const nextColorIndex = (colorIndex + 1) % NEON_COLORS.length
+        const colorMix = (combinedPhase * NEON_COLORS.length) % 1
+        
+        // Interpolate between two colors for smooth transitions
+        const color1 = new THREE.Color(NEON_COLORS[colorIndex])
+        const color2 = new THREE.Color(NEON_COLORS[nextColorIndex])
+        const color = color1.lerp(color2, colorMix)
+        
+        // Add brightness variation based on wave intensity - smoother pulsing
+        const intensity = 0.5 + combinedPhase * 0.5 // Gentle brightness variation
+        color.multiplyScalar(intensity)
+        
+        instancedMeshRef.current.setColorAt(tubeIndex, color)
+        tubeIndex++
+      }
+
+      // Mark colors as needing update
+      if (instancedMeshRef.current.instanceColor) {
+        instancedMeshRef.current.instanceColor.needsUpdate = true
+      }
+    }
 
     // Growth simulation - only run if still growing
     if (!isGrowing || cluster.length >= maxParticles) {
