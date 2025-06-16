@@ -99,6 +99,10 @@ function Mycelium({
         const length = direction.length()
         const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5)
 
+        // Simple thickness based on generation (much more efficient)
+        const generationThickness = 1 + (Math.max(0, 10 - parent.generation) * 0.08) // Older = thicker
+        const tubeThickness = Math.min(generationThickness, 2.5) // Cap thickness
+
         // Create transformation matrix for the tube
         direction.normalize()
         
@@ -106,11 +110,11 @@ function Mycelium({
         const up = new THREE.Vector3(0, 1, 0)
         tempQuaternion.setFromUnitVectors(up, direction)
         
-        // Set matrix: position at midpoint, rotate to align with connection, scale length
+        // Set matrix: position at midpoint, rotate to align with connection, scale by thickness and length
         matrix.compose(
           midpoint,
           tempQuaternion,
-          new THREE.Vector3(1, length, 1) // Scale Y (height) to match distance
+          new THREE.Vector3(tubeThickness, length, tubeThickness) // Scale X,Z for thickness, Y for length
         )
         
         instancedMeshRef.current.setMatrixAt(tubeIndex, matrix)
@@ -244,7 +248,7 @@ function Mycelium({
         }
 
         // Calculate new position with generous spacing
-        const segmentLength = stepSize * (0.8 + Math.random() * 0.5) // Increased variation for longer reach
+        const segmentLength = stepSize * (0.8 + Math.random() * 0.5) // Standard spacing
         const newPosition = particle.position.clone().add(
           newDirection.multiplyScalar(segmentLength)
         )
