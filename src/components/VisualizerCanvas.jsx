@@ -12,8 +12,8 @@ function VisualizerCanvas({
   pointLightPosition = [-10, -10, -10],
   pointLightIntensity = 0.5,
   enableControls = true,
-  minDistance = 1,
-  maxDistance = 20,
+  minDistance = 0.1,
+  maxDistance = 100,
   ...canvasProps
 }) {
   return (
@@ -59,8 +59,6 @@ function VisualizerCanvas({
           enableRotate={true}
           minDistance={minDistance}
           maxDistance={maxDistance}
-          minPolarAngle={0}
-          maxPolarAngle={Math.PI / 2}
         />
       )}
     </Canvas>

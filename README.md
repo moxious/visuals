@@ -6,8 +6,9 @@ A React + Three.js visualizer application featuring interactive 3D scenes and an
 
 ## ✨ Features
 
-- **🎯 Interactive 3D Visualizers**: Multiple visualizer components including pyramids and star fields
-- **🎮 Mouse Controls**: Pan, zoom, and rotate through 3D scenes
+- **🎯 Interactive 3D Visualizers**: Multiple visualizer components including pyramids, star fields, and alien terrain
+- **🎛️ Visualizer Selector**: Dropdown menu to easily switch between different visualizers
+- **🎮 Mouse Controls**: Pan, zoom, and rotate through 3D scenes (where enabled)
 - **🌈 Dynamic Animations**: Smooth camera movements and object animations
 - **🎨 Customizable**: Configurable colors, sizes, speeds, and animation patterns
 - **📱 Responsive**: Works across different screen sizes and devices
@@ -20,6 +21,9 @@ Interactive 3D pyramid with customizable materials, colors, and rotation animati
 
 ### Star Field Visualizer  
 Immersive space-flight experience with thousands of procedurally generated stars and animated camera movement through 3D space.
+
+### Alien Terrain Visualizer
+Spaceship journey through thick layers of rotating alien geometric shapes (rings, torus, cylinders) in bright colors.
 
 ## 🛠️ Developer Setup
 

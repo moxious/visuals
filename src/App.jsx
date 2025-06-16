@@ -1,24 +1,82 @@
-import React from 'react'
+import React, { useState } from 'react'
 import VisualizerCanvas from './components/VisualizerCanvas'
-import { StarField } from './visualizers'
+import { Pyramid, StarField, AlienTerrain } from './visualizers'
 import './App.css'
 
+const VISUALIZERS = {
+  pyramid: {
+    name: 'Pyramid',
+    component: Pyramid,
+    props: {},
+    canvasProps: {
+      cameraPosition: [3, 3, 3],
+      ambientLightIntensity: 0.5,
+      directionalLightIntensity: 1,
+      enableControls: true
+    }
+  },
+  starField: {
+    name: 'StarField',
+    component: StarField,
+    props: {
+      starCount: 8000,
+      spread: 150,
+      starSize: 1.5,
+      speed: 0.8,
+      cameraPath: "forward"
+    },
+    canvasProps: {
+      cameraPosition: [0, 0, 0],
+      ambientLightIntensity: 0.1,
+      directionalLightIntensity: 0.3,
+      enableControls: false
+    }
+  },
+  alienTerrain: {
+    name: 'AlienTerrain',
+    component: AlienTerrain,
+    props: {
+      speed: 0.3,
+      layerThickness: 25,
+      layerSpacing: 30,
+      shapesPerLayer: 15
+    },
+    canvasProps: {
+      cameraPosition: [0, 0, 0],
+      ambientLightIntensity: 0.2,
+      directionalLightIntensity: 0.6,
+      directionalLightPosition: [5, 5, 5],
+      enableControls: false
+    }
+  }
+}
+
 function App() {
+  const [selectedVisualizer, setSelectedVisualizer] = useState('alienTerrain')
+  
+  const currentVisualizer = VISUALIZERS[selectedVisualizer]
+  const VisualizerComponent = currentVisualizer.component
+
   return (
     <div className="app">
-      <VisualizerCanvas
-        cameraPosition={[0, 0, 0]}
-        ambientLightIntensity={0.1}
-        directionalLightIntensity={0.3}
-        enableControls={false}
-      >
-        <StarField 
-          starCount={8000}
-          spread={150}
-          starSize={1.5}
-          speed={0.8}
-          cameraPath="forward"
-        />
+      {/* Visualizer Selector */}
+      <div className="visualizer-selector">
+        <label htmlFor="visualizer-select">Visualizer: </label>
+        <select 
+          id="visualizer-select"
+          value={selectedVisualizer}
+          onChange={(e) => setSelectedVisualizer(e.target.value)}
+        >
+          {Object.entries(VISUALIZERS).map(([key, visualizer]) => (
+            <option key={key} value={key}>
+              {visualizer.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <VisualizerCanvas {...currentVisualizer.canvasProps}>
+        <VisualizerComponent {...currentVisualizer.props} />
       </VisualizerCanvas>
     </div>
   )

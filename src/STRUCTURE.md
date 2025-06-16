@@ -14,10 +14,13 @@ src/
 │   │   └── Pyramid.jsx  # Pyramid component
 │   ├── StarField/       # Star field visualizer
 │   │   └── StarField.jsx # Star field component
+│   ├── AlienTerrain/    # Alien terrain visualizer
+│   │   └── AlienTerrain.jsx # Alien terrain component
 │   └── index.js         # Visualizer exports
 ├── scenes/              # Pre-configured scene examples
 │   ├── PyramidScene.jsx # Example pyramid scene
-│   └── StarFieldScene.jsx # Example star field scenes
+│   ├── StarFieldScene.jsx # Example star field scenes
+│   └── AlienTerrainScene.jsx # Example alien terrain scenes
 ├── App.jsx              # Main application component
 └── ...
 ```
@@ -135,6 +138,24 @@ function App() {
 - **spiral**: Spiraling movement around the star field
 - **wave**: Wave-like undulating motion through space
 
+### AlienTerrain
+- **File**: `src/visualizers/AlienTerrain/AlienTerrain.jsx`
+- **Features**: Spaceship journey through thick layers of rotating alien geometric shapes
+- **Props**:
+  - `speed` - Forward camera movement speed (default: 0.3)
+  - `layerThickness` - Thickness of each shape layer (default: 25)
+  - `layerSpacing` - Distance between layer centers (default: 30)
+  - `shapesPerLayer` - Number of shapes per layer (default: 15)
+
+**Shape Features**:
+- **Shape Types**: Rings (thick torus), torus, and cylinders with bright random colors
+- **Gentle Rotation**: Each shape rotates slowly around its fixed position
+- **Thick Layers**: "Fat fields" of shapes creating immersive alien terrain
+- **Dynamic Generation**: New layers created ahead, old layers removed behind camera
+- **Forward Movement**: Camera flies through the terrain at a leisurely, noticeable pace
+- **Interactive Controls**: Mouse controls enabled for click & drag rotation and scroll zoom
+- **No Disappearing**: All shapes have minimum thickness to remain visible when rotating
+
 ## Examples
 
 See `src/scenes/` for example scene configurations:
@@ -142,4 +163,8 @@ See `src/scenes/` for example scene configurations:
 - **StarFieldScene.jsx**: Multiple star field configurations including:
   - `HyperspaceScene`: Fast forward motion effect
   - `SpiralStarScene`: Spiral camera movement
-  - `NebulaWaveScene`: Wave motion through colored stars 
+  - `NebulaWaveScene`: Wave motion through colored stars
+- **AlienTerrainScene.jsx**: Alien terrain configurations including:
+  - `AlienJungleScene`: Dense terrain with many shapes
+  - `AlienVoidScene`: Sparse formations in alien void
+  - `AlienTunnelScene`: Fast journey through geometric tunnel 
