@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import VisualizerCanvas from './components/VisualizerCanvas'
 import { Pyramid, StarField, AlienTerrain } from './visualizers'
 import HopalongAttractor from './visualizers/HopalongAttractor/HopalongAttractor'
+import Mycelium from './visualizers/Mycelium/Mycelium'
 import './App.css'
 
 const VISUALIZERS = {
@@ -65,11 +66,26 @@ const VISUALIZERS = {
       directionalLightIntensity: 0.2,
       enableControls: true
     }
+  },
+  mycelium: {
+    name: 'Mycelium',
+    component: Mycelium,
+    props: {
+      maxParticles: 5000,
+      killRadius: 50,
+      stepSize: 0.9
+    },
+    canvasProps: {
+      cameraPosition: [0, 0, 17],
+      ambientLightIntensity: 0.3,
+      directionalLightIntensity: 0.1,
+      enableControls: true
+    }
   }
 }
 
 function App() {
-  const [selectedVisualizer, setSelectedVisualizer] = useState('hopalongAttractor')
+  const [selectedVisualizer, setSelectedVisualizer] = useState('mycelium')
   
   const currentVisualizer = VISUALIZERS[selectedVisualizer]
   const VisualizerComponent = currentVisualizer.component
