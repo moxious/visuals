@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import VisualizerCanvas from './components/VisualizerCanvas'
 import { Pyramid, StarField, AlienTerrain } from './visualizers'
+import HopalongAttractor from './visualizers/HopalongAttractor/HopalongAttractor'
 import './App.css'
 
 const VISUALIZERS = {
@@ -48,11 +49,27 @@ const VISUALIZERS = {
       directionalLightPosition: [5, 5, 5],
       enableControls: true
     }
+  },
+  hopalongAttractor: {
+    name: 'Hopalong Attractor',
+    component: HopalongAttractor,
+    props: {
+      pointCount: 50000,
+      speed: 0.5,
+      scale: 0.8,
+      iterations: 100000
+    },
+    canvasProps: {
+      cameraPosition: [0, 0, 25],
+      ambientLightIntensity: 0.8,
+      directionalLightIntensity: 0.2,
+      enableControls: true
+    }
   }
 }
 
 function App() {
-  const [selectedVisualizer, setSelectedVisualizer] = useState('alienTerrain')
+  const [selectedVisualizer, setSelectedVisualizer] = useState('hopalongAttractor')
   
   const currentVisualizer = VISUALIZERS[selectedVisualizer]
   const VisualizerComponent = currentVisualizer.component
