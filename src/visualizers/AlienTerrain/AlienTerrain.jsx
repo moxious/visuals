@@ -148,13 +148,14 @@ function AlienTerrain({
   // Initialize shapes
   useEffect(() => {
     const initialShapes = []
-    // Create many more initial layers ahead of camera for smoother infinite generation
-    for (let i = 0; i < 20; i++) {
+    // Create massive initial buffer - 40 layers ahead of camera
+    for (let i = 0; i < 40; i++) {
       const layerZ = i * layerSpacing
       initialShapes.push(...generateLayerShapes(layerZ))
     }
     setShapes(initialShapes)
-    nextLayerZ.current = 20 * layerSpacing
+    nextLayerZ.current = 40 * layerSpacing
+    console.log(`Initialized ${initialShapes.length} shapes across 40 layers`)
   }, [layerSpacing, layerThickness, shapesPerLayer])
   
   // Animate camera and manage shapes
@@ -172,36 +173,67 @@ function AlienTerrain({
     setShapes(prevShapes => {
       let newShapes = [...prevShapes]
       
-      // Generate new layers much further ahead to ensure infinite terrain
-      // Keep generating layers until we have 10 layers ahead of the camera
+      // EMERGENCY CHECK: If we have very few shapes, generate many immediately
+      if (newShapes.length < 500) {
+        console.log(`EMERGENCY: Only ${newShapes.length} shapes remaining! Generating emergency layers.`)
+        for (let i = 0; i < 10; i++) {
+          newShapes.push(...generateLayerShapes(nextLayerZ.current))
+          nextLayerZ.current += layerSpacing
+        }
+        console.log(`Emergency generation complete: ${newShapes.length} shapes now`)
+      }
+      
+      // AGGRESSIVE GENERATION: Always maintain 25 layers ahead minimum
       let layersGenerated = 0
-      while (nextLayerZ.current < cameraPositionRef.current + layerSpacing * 10) {
+      const targetLayersAhead = 25
+      const minLayersAhead = 18
+      
+      while (nextLayerZ.current < cameraPositionRef.current + layerSpacing * targetLayersAhead) {
         newShapes.push(...generateLayerShapes(nextLayerZ.current))
         nextLayerZ.current += layerSpacing
         layersGenerated++
+        
+        // Force large batch generation if we're significantly behind
+        if (nextLayerZ.current < cameraPositionRef.current + layerSpacing * minLayersAhead) {
+          // Generate 5 more layers immediately in this batch
+          for (let i = 0; i < 5; i++) {
+            newShapes.push(...generateLayerShapes(nextLayerZ.current))
+            nextLayerZ.current += layerSpacing
+            layersGenerated++
+          }
+        }
+        
+        // Prevent infinite loop
+        if (layersGenerated > 15) break
       }
       
       // Debug: Log when new layers are generated
       if (layersGenerated > 0) {
-        console.log(`Generated ${layersGenerated} new layers (${layersGenerated * shapesPerLayer} shapes). Camera at Z: ${cameraPositionRef.current.toFixed(1)}, Next layer at: ${nextLayerZ.current.toFixed(1)}`)
+        const layersAhead = (nextLayerZ.current - cameraPositionRef.current) / layerSpacing
+        console.log(`Generated ${layersGenerated} new layers (${layersGenerated * shapesPerLayer} shapes). Camera at Z: ${cameraPositionRef.current.toFixed(1)}, Layers ahead: ${layersAhead.toFixed(1)}, Total shapes: ${newShapes.length}`)
       }
       
-      // Remove shapes that are far behind camera to manage memory
-      // Keep shapes 6 layers behind for smooth transition and buffer
-      const shapesBeforeRemoval = newShapes.length
-      newShapes = newShapes.filter(shape => 
-        shape.position[2] > cameraPositionRef.current - layerSpacing * 6
-      )
-      const shapesRemoved = shapesBeforeRemoval - newShapes.length
-      
-      // Debug: Log when shapes are removed
-      if (shapesRemoved > 0) {
-        console.log(`Removed ${shapesRemoved} shapes behind camera. Remaining shapes: ${newShapes.length}`)
+      // CONSERVATIVE REMOVAL: Only remove shapes very rarely and keep huge buffer
+      // Keep shapes 20 layers behind camera
+      // Only clean up every 20th frame to minimize removal frequency
+      const frameNum = Math.floor(cameraPositionRef.current / moveSpeed)
+      if (frameNum % 20 === 0 && newShapes.length > 2000) { // Only clean up every 20th frame and only if we have many shapes
+        const shapesBeforeRemoval = newShapes.length
+        newShapes = newShapes.filter(shape => 
+          shape.position[2] > cameraPositionRef.current - layerSpacing * 20
+        )
+        const shapesRemoved = shapesBeforeRemoval - newShapes.length
+        
+        // Debug: Log when shapes are removed
+        if (shapesRemoved > 0) {
+          console.log(`Removed ${shapesRemoved} shapes behind camera. Remaining shapes: ${newShapes.length}`)
+        }
       }
       
-      // Periodic balance summary (every 100 frames ~1.67 seconds at 60fps)
-      if (Math.floor(cameraPositionRef.current) % 50 === 0 && Math.floor(cameraPositionRef.current) !== Math.floor(cameraPositionRef.current - moveSpeed)) {
-        console.log(`Balance check - Camera Z: ${cameraPositionRef.current.toFixed(1)}, Total shapes: ${newShapes.length}, Next layer at: ${nextLayerZ.current.toFixed(1)}`)
+      // Periodic balance summary
+      if (Math.floor(cameraPositionRef.current) % 100 === 0 && Math.floor(cameraPositionRef.current) !== Math.floor(cameraPositionRef.current - moveSpeed)) {
+        const layersAhead = (nextLayerZ.current - cameraPositionRef.current) / layerSpacing
+        console.log(`Balance check - Camera Z: ${cameraPositionRef.current.toFixed(1)}, Total shapes: ${newShapes.length}, Layers ahead: ${layersAhead.toFixed(1)}`)
       }
       
       return newShapes
