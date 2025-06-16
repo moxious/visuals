@@ -58,11 +58,16 @@ function HopalongAttractor({
         y = newY
       }
       
-      // Store position (scale down and add slight Z variation for 3D effect)
+      // Store position with substantial Z depth to create volumetric effect
+      // Create multiple layers by using iteration index and position-based Z distribution
+      const layerZ = (i / pointCount) * 8 - 4  // Spread across Z from -4 to +4
+      const positionZ = Math.sin(x * 0.3) * Math.cos(y * 0.3) * 2  // Position-based Z variation
+      const noiseZ = (Math.sin(i * 0.05) + Math.cos(i * 0.03)) * 1.5  // Noise-based Z variation
+      
       positions.push({
         x: x * scale,
         y: y * scale,
-        z: Math.sin(i * 0.01) * 0.5
+        z: layerZ + positionZ + noiseZ  // Combine multiple Z effects for depth
       })
       
       // Assign colors based on position and iteration
