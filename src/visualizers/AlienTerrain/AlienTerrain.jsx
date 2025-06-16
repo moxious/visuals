@@ -120,7 +120,7 @@ function AlienTerrain({
     const layerShapes = []
     
     for (let i = 0; i < shapesPerLayer; i++) {
-In      // Distribute shapes within the thick layer with much wider spread
+      // Distribute shapes within the thick layer with much wider spread
       const x = (Math.random() - 0.5) * 120 // Much wider spread across X (-60 to +60)
       const y = (Math.random() - 0.5) * 120 // Much wider spread across Y (-60 to +60)
       const z = layerZ + (Math.random() - 0.5) * layerThickness // Within layer thickness
