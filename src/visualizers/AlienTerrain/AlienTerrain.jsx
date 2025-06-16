@@ -2,20 +2,21 @@ import React, { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
-// Bright color palette for alien shapes
-const BRIGHT_COLORS = [
-  '#ff0080', // Hot pink
-  '#00ff80', // Neon green
-  '#8000ff', // Electric purple
-  '#ff8000', // Bright orange
-  '#0080ff', // Electric blue
-  '#ff0040', // Red-pink
-  '#40ff00', // Lime green
-  '#ff4000', // Orange-red
-  '#0040ff', // Blue
-  '#ff00c0', // Magenta
-  '#00ffff', // Cyan
-  '#ffff00', // Yellow
+// Cyberpunk neon color palette for alien shapes
+const NEON_COLORS = [
+  '#00FFF7', // Neon Cyan — glows like a digital ocean
+  '#FF00FF', // Electric Magenta — hurts your eyes, in a good way
+  '#CCFF00', // Lime Laser Green — like alien slime but make it highlighter
+  '#8F00FF', // Ultraviolet Vibe — royalty, but from space
+  '#FF0033', // Infrared Red — the kinda red that screams "do not touch"
+  '#FF6F00', // Plasma Orange — like a sunrise on Mars with the saturation cranked
+  '#FF4EB1', // Glitch Pink — somewhere between cotton candy and a corrupted jpeg
+  '#1F51FF', // Neon Blue — classic Tron-line blue, freshly digitized
+  // Additional colors that fit the vibe
+  '#00FF41', // Matrix green
+  '#FF0080', // Hot neon pink
+  '#40E0D0', // Turquoise glow
+  '#FFD700', // Electric gold
 ]
 
 // Shape types for alien terrain
@@ -24,7 +25,8 @@ const SHAPE_TYPES = ['ring', 'torus', 'cylinder']
 function AlienShape({ 
   position, 
   shapeType, 
-  color, 
+  color1,
+  color2, 
   id 
 }) {
   const meshRef = useRef()
@@ -33,6 +35,12 @@ function AlienShape({
     y: (Math.random() - 0.5) * 0.02,
     z: (Math.random() - 0.5) * 0.02
   })
+  
+  // Color morphing setup
+  const baseColor = useMemo(() => new THREE.Color(color1), [color1])
+  const targetColor = useMemo(() => new THREE.Color(color2), [color2])
+  const currentColor = useMemo(() => new THREE.Color(color1), [color1])
+  const colorSpeed = useRef(0.5 + Math.random() * 1.5) // Random speed between 0.5-2.0 for variety
   
   // Create geometry based on shape type
   const geometry = useMemo(() => {
@@ -58,12 +66,26 @@ function AlienShape({
     }
   }, [shapeType])
   
-  // Gentle rotation animation
-  useFrame(() => {
+  // Gentle rotation animation and color morphing
+  useFrame((state) => {
     if (meshRef.current) {
+      // Rotation animation
       meshRef.current.rotation.x += rotationSpeed.current.x
       meshRef.current.rotation.y += rotationSpeed.current.y
       meshRef.current.rotation.z += rotationSpeed.current.z
+      
+      // Color morphing animation - smooth oscillation between two colors
+      const time = state.clock.elapsedTime * colorSpeed.current
+      const colorLerpFactor = (Math.sin(time) + 1) * 0.5 // Oscillates between 0 and 1
+      
+      // Interpolate between the two colors
+      currentColor.copy(baseColor).lerp(targetColor, colorLerpFactor)
+      
+      // Update the material color
+      if (meshRef.current.material) {
+        meshRef.current.material.color.copy(currentColor)
+        meshRef.current.material.emissive.copy(currentColor).multiplyScalar(0.2)
+      }
     }
   })
   
@@ -71,8 +93,8 @@ function AlienShape({
     <mesh ref={meshRef} position={position}>
       <primitive object={geometry} />
       <meshStandardMaterial 
-        color={color}
-        emissive={color}
+        color={currentColor}
+        emissive={currentColor}
         emissiveIntensity={0.2}
         metalness={0.3}
         roughness={0.4}
@@ -98,16 +120,25 @@ function AlienTerrain({
     const layerShapes = []
     
     for (let i = 0; i < shapesPerLayer; i++) {
-      // Distribute shapes within the thick layer with much wider spread
+In      // Distribute shapes within the thick layer with much wider spread
       const x = (Math.random() - 0.5) * 120 // Much wider spread across X (-60 to +60)
       const y = (Math.random() - 0.5) * 120 // Much wider spread across Y (-60 to +60)
       const z = layerZ + (Math.random() - 0.5) * layerThickness // Within layer thickness
+      
+      // Pick two different random colors for morphing
+      const color1Index = Math.floor(Math.random() * NEON_COLORS.length)
+      let color2Index = Math.floor(Math.random() * NEON_COLORS.length)
+      // Ensure the second color is different from the first
+      while (color2Index === color1Index) {
+        color2Index = Math.floor(Math.random() * NEON_COLORS.length)
+      }
       
       layerShapes.push({
         id: `${layerZ}-${i}-${Date.now()}`,
         position: [x, y, z],
         shapeType: SHAPE_TYPES[Math.floor(Math.random() * SHAPE_TYPES.length)],
-        color: BRIGHT_COLORS[Math.floor(Math.random() * BRIGHT_COLORS.length)]
+        color1: NEON_COLORS[color1Index],
+        color2: NEON_COLORS[color2Index]
       })
     }
     
@@ -184,7 +215,8 @@ function AlienTerrain({
           key={shape.id}
           position={shape.position}
           shapeType={shape.shapeType}
-          color={shape.color}
+          color1={shape.color1}
+          color2={shape.color2}
           id={shape.id}
         />
       ))}
