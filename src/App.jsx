@@ -29,7 +29,7 @@ const VISUALIZERS = {
       cameraPosition: [0, 0, 0],
       ambientLightIntensity: 0.1,
       directionalLightIntensity: 0.3,
-      enableControls: false
+      enableControls: true
     }
   },
   alienTerrain: {
@@ -46,7 +46,7 @@ const VISUALIZERS = {
       ambientLightIntensity: 0.2,
       directionalLightIntensity: 0.6,
       directionalLightPosition: [5, 5, 5],
-      enableControls: false
+      enableControls: true
     }
   }
 }
