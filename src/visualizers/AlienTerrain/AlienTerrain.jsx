@@ -28,11 +28,119 @@ const SHAPE_TYPES = [
   'torusKnot', 'capsule'                 // Complex shapes
 ]
 
+// Texture types for alien objects
+const TEXTURE_TYPES = [
+  'smooth',          // No texture - smooth surface
+  'noise',           // Perlin-like noise pattern
+  'grid',            // Grid/mesh pattern
+  'stripes',         // Striped pattern
+  'dots',            // Dotted pattern
+  'hexagon',         // Hexagonal pattern
+  'circuit',         // Circuit board pattern
+  'scales',          // Scale/dragon skin pattern
+  'waves',           // Wave pattern
+  'cellular',        // Cellular/organic pattern
+]
+
+// Texture generation functions
+const createProceduralTexture = (textureType, size = 256) => {
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const context = canvas.getContext('2d')
+  const imageData = context.createImageData(size, size)
+  const data = imageData.data
+  
+  // Simple noise function
+  const noise = (x, y, scale = 0.1) => {
+    return Math.sin(x * scale) * Math.cos(y * scale) * 0.5 + 0.5
+  }
+  
+  // Generate texture based on type
+  for (let i = 0; i < size; i++) {
+    for (let j = 0; j < size; j++) {
+      const index = (i * size + j) * 4
+      let intensity = 1.0
+      
+      switch (textureType) {
+        case 'noise':
+          intensity = noise(i, j, 0.05) * noise(i, j, 0.1) * noise(i, j, 0.2)
+          break
+          
+        case 'grid':
+          intensity = (i % 32 < 2 || j % 32 < 2) ? 0.3 : 1.0
+          break
+          
+        case 'stripes':
+          intensity = Math.sin(i * 0.2) * 0.3 + 0.7
+          break
+          
+        case 'dots':
+          const dx = i % 32 - 16
+          const dy = j % 32 - 16
+          intensity = (dx * dx + dy * dy < 64) ? 0.4 : 1.0
+          break
+          
+        case 'hexagon':
+          const hexX = Math.floor(i / 24)
+          const hexY = Math.floor(j / 24)
+          const localX = i % 24 - 12
+          const localY = j % 24 - 12
+          intensity = (Math.abs(localX) + Math.abs(localY) < 8) ? 0.5 : 1.0
+          break
+          
+        case 'circuit':
+          const circuitPattern = (i % 16 < 2 && j % 8 < 2) || (i % 8 < 2 && j % 16 < 2)
+          intensity = circuitPattern ? 0.2 : 1.0
+          break
+          
+        case 'scales':
+          const scaleX = Math.floor(i / 16)
+          const scaleY = Math.floor(j / 16)
+          const offset = (scaleY % 2) * 8
+          const localScaleX = (i + offset) % 16 - 8
+          const localScaleY = j % 16 - 8
+          intensity = (localScaleX * localScaleX + localScaleY * localScaleY < 32) ? 0.6 : 1.0
+          break
+          
+        case 'waves':
+          intensity = Math.sin(i * 0.1) * Math.sin(j * 0.15) * 0.3 + 0.7
+          break
+          
+        case 'cellular':
+          const cellNoise = noise(i, j, 0.08) * noise(i * 1.3, j * 1.3, 0.12)
+          intensity = cellNoise > 0.5 ? 0.4 : 1.0
+          break
+          
+        default: // 'smooth'
+          intensity = 1.0
+          break
+      }
+      
+      // Set RGB values (we'll let the material handle coloring)
+      data[index] = intensity * 255     // Red
+      data[index + 1] = intensity * 255 // Green  
+      data[index + 2] = intensity * 255 // Blue
+      data[index + 3] = 255             // Alpha
+    }
+  }
+  
+  context.putImageData(imageData, 0, 0)
+  
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.wrapS = THREE.RepeatWrapping
+  texture.wrapT = THREE.RepeatWrapping
+  texture.repeat.set(2, 2) // Tile the texture
+  
+  return texture
+}
+
 function AlienShape({ 
   position, 
   shapeType, 
   color1,
-  color2, 
+  color2,
+  textureType = 'smooth',
   id 
 }) {
   const meshRef = useRef()
@@ -47,6 +155,11 @@ function AlienShape({
   const targetColor = useMemo(() => new THREE.Color(color2), [color2])
   const currentColor = useMemo(() => new THREE.Color(color1), [color1])
   const colorSpeed = useRef(0.5 + Math.random() * 1.5) // Random speed between 0.5-2.0 for variety
+  
+  // Texture setup
+  const texture = useMemo(() => {
+    return textureType === 'smooth' ? null : createProceduralTexture(textureType)
+  }, [textureType])
   
   // Create geometry based on shape type
   const geometry = useMemo(() => {
@@ -164,7 +277,10 @@ function AlienShape({
         emissive={currentColor}
         emissiveIntensity={0.2}
         metalness={0.3}
-        roughness={0.4}
+        roughness={texture ? 0.6 : 0.4} // Slightly rougher with textures
+        map={texture}
+        normalMap={texture} // Use same texture as normal map for depth
+        normalScale={texture ? [0.3, 0.3] : [0, 0]} // Subtle normal mapping
       />
     </mesh>
   )
@@ -205,7 +321,8 @@ function AlienTerrain({
         position: [x, y, z],
         shapeType: SHAPE_TYPES[Math.floor(Math.random() * SHAPE_TYPES.length)],
         color1: NEON_COLORS[color1Index],
-        color2: NEON_COLORS[color2Index]
+        color2: NEON_COLORS[color2Index],
+        textureType: TEXTURE_TYPES[Math.floor(Math.random() * TEXTURE_TYPES.length)]
       })
     }
     
@@ -316,6 +433,7 @@ function AlienTerrain({
           shapeType={shape.shapeType}
           color1={shape.color1}
           color2={shape.color2}
+          textureType={shape.textureType}
           id={shape.id}
         />
       ))}
