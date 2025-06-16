@@ -39,7 +39,7 @@ const VISUALIZERS = {
       speed: 0.3,
       layerThickness: 25,
       layerSpacing: 30,
-      shapesPerLayer: 15
+      shapesPerLayer: 75
     },
     canvasProps: {
       cameraPosition: [0, 0, 0],

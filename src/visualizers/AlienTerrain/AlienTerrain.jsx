@@ -98,9 +98,9 @@ function AlienTerrain({
     const layerShapes = []
     
     for (let i = 0; i < shapesPerLayer; i++) {
-      // Distribute shapes within the thick layer
-      const x = (Math.random() - 0.5) * 40 // Spread across X
-      const y = (Math.random() - 0.5) * 40 // Spread across Y
+      // Distribute shapes within the thick layer with much wider spread
+      const x = (Math.random() - 0.5) * 120 // Much wider spread across X (-60 to +60)
+      const y = (Math.random() - 0.5) * 120 // Much wider spread across Y (-60 to +60)
       const z = layerZ + (Math.random() - 0.5) * layerThickness // Within layer thickness
       
       layerShapes.push({
@@ -117,13 +117,13 @@ function AlienTerrain({
   // Initialize shapes
   useEffect(() => {
     const initialShapes = []
-    // Create initial layers ahead of camera (starting from layerSpacing forward)
-    for (let i = 1; i < 7; i++) {
+    // Create many more initial layers ahead of camera for smoother infinite generation
+    for (let i = 0; i < 20; i++) {
       const layerZ = i * layerSpacing
       initialShapes.push(...generateLayerShapes(layerZ))
     }
     setShapes(initialShapes)
-    nextLayerZ.current = 7 * layerSpacing
+    nextLayerZ.current = 20 * layerSpacing
   }, [layerSpacing, layerThickness, shapesPerLayer])
   
   // Animate camera and manage shapes
@@ -137,20 +137,41 @@ function AlienTerrain({
     // Look straight ahead (positive Z direction) instead of constantly adjusting target
     camera.lookAt(0, 0, cameraPositionRef.current + 100)
     
-    // Generate new layers ahead of camera
+    // Generate new layers ahead of camera for infinite terrain
     setShapes(prevShapes => {
       let newShapes = [...prevShapes]
       
-      // Add new layers if camera is approaching
-      while (nextLayerZ.current < cameraPositionRef.current + layerSpacing * 4) {
+      // Generate new layers much further ahead to ensure infinite terrain
+      // Keep generating layers until we have 10 layers ahead of the camera
+      let layersGenerated = 0
+      while (nextLayerZ.current < cameraPositionRef.current + layerSpacing * 10) {
         newShapes.push(...generateLayerShapes(nextLayerZ.current))
         nextLayerZ.current += layerSpacing
+        layersGenerated++
       }
       
-      // Remove shapes that are far behind camera
+      // Debug: Log when new layers are generated
+      if (layersGenerated > 0) {
+        console.log(`Generated ${layersGenerated} new layers (${layersGenerated * shapesPerLayer} shapes). Camera at Z: ${cameraPositionRef.current.toFixed(1)}, Next layer at: ${nextLayerZ.current.toFixed(1)}`)
+      }
+      
+      // Remove shapes that are far behind camera to manage memory
+      // Keep shapes 6 layers behind for smooth transition and buffer
+      const shapesBeforeRemoval = newShapes.length
       newShapes = newShapes.filter(shape => 
-        shape.position[2] > cameraPositionRef.current - layerSpacing * 2
+        shape.position[2] > cameraPositionRef.current - layerSpacing * 6
       )
+      const shapesRemoved = shapesBeforeRemoval - newShapes.length
+      
+      // Debug: Log when shapes are removed
+      if (shapesRemoved > 0) {
+        console.log(`Removed ${shapesRemoved} shapes behind camera. Remaining shapes: ${newShapes.length}`)
+      }
+      
+      // Periodic balance summary (every 100 frames ~1.67 seconds at 60fps)
+      if (Math.floor(cameraPositionRef.current) % 50 === 0 && Math.floor(cameraPositionRef.current) !== Math.floor(cameraPositionRef.current - moveSpeed)) {
+        console.log(`Balance check - Camera Z: ${cameraPositionRef.current.toFixed(1)}, Total shapes: ${newShapes.length}, Next layer at: ${nextLayerZ.current.toFixed(1)}`)
+      }
       
       return newShapes
     })
