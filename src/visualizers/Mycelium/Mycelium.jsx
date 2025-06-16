@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, useEffect, useState } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
 // Cyberpunk neon color palette
@@ -28,6 +28,7 @@ function Mycelium({
   const timeRef = useRef(0)
   const [cluster, setCluster] = useState([])
   const [isGrowing, setIsGrowing] = useState(true)
+  const { camera } = useThree() // Access to the camera for orbital movement
   
   // Create new seed with random direction
   const createNewSeed = () => {
@@ -142,6 +143,35 @@ function Mycelium({
   
   // Continuous growth simulation
   useFrame(() => {
+    // Always update time and camera movement, regardless of growth state
+    timeRef.current += 0.01
+    
+    // Gentle rotation of the entire structure
+    if (instancedMeshRef.current) {
+      instancedMeshRef.current.rotation.y = timeRef.current * 0.1
+      instancedMeshRef.current.rotation.x = Math.sin(timeRef.current * 0.05) * 0.1
+    }
+
+    // Slow orbital camera movement around the cluster - ALWAYS active
+    const orbitRadius = 17 // Distance from center (based on our current camera position)
+    const orbitSpeed = 0.075 // Increased orbital speed by 50%
+    const verticalDrift = 0.03 // Gentle up/down movement
+    
+    // Calculate orbital position using spherical coordinates
+    const orbitTime = timeRef.current * orbitSpeed
+    const verticalTime = timeRef.current * verticalDrift
+    
+    const x = Math.cos(orbitTime) * orbitRadius
+    const z = Math.sin(orbitTime) * orbitRadius
+    const y = Math.sin(verticalTime) * 5 // Gentle vertical drift ±5 units
+    
+    // Update camera position
+    camera.position.set(x, y, z)
+    
+    // Always look at the center of the cluster
+    camera.lookAt(0, 0, 0)
+
+    // Growth simulation - only run if still growing
     if (!isGrowing || cluster.length >= maxParticles) {
       setIsGrowing(false)
       return
@@ -170,16 +200,43 @@ function Mycelium({
       // Growth probability decreases with distance from center
       const growthProbability = Math.max(0.05, 0.18 * (1 - distanceFromCenter / killRadius))
       
+      // Anti-crowding: Check for nearby particles
+      const crowdingRadius = stepSize * 2.5
+      const nearbyParticles = cluster.filter(other => 
+        other !== particle && particle.position.distanceTo(other.position) < crowdingRadius
+      )
+      const crowdingFactor = Math.max(0.3, 1 - (nearbyParticles.length * 0.15)) // Reduce growth in crowded areas
+      const adjustedGrowthProbability = growthProbability * crowdingFactor
+
       // Attempt to grow this tip
-      if (Math.random() < growthProbability) {
+      if (Math.random() < adjustedGrowthProbability) {
         // Add moderate randomness to growth direction for wide spreading
-        const randomFactor = 0.8 // Reduced from 0.8 - that was too extreme
+        const randomFactor = 0.5 // Reduced for more controlled growth
         const newDirection = particle.growthDirection.clone()
         newDirection.add(new THREE.Vector3(
           (Math.random() - 0.5) * randomFactor,
           (Math.random() - 0.5) * randomFactor,
           (Math.random() - 0.5) * randomFactor
-        )).normalize()
+        ))
+
+        // Radial bias: Encourage growth away from center
+        const radialDirection = particle.position.clone().normalize()
+        const radialBias = 0.6 // Strength of outward bias
+        newDirection.add(radialDirection.multiplyScalar(radialBias))
+
+        // Anti-crowding: Add repulsion from nearby particles
+        if (nearbyParticles.length > 0) {
+          const repulsionDirection = new THREE.Vector3()
+          nearbyParticles.forEach(nearby => {
+            const repulsion = particle.position.clone().sub(nearby.position).normalize()
+            repulsionDirection.add(repulsion)
+          })
+          repulsionDirection.normalize()
+          const repulsionStrength = 0.5
+          newDirection.add(repulsionDirection.multiplyScalar(repulsionStrength))
+        }
+
+        newDirection.normalize()
 
         // Ensure direction is valid (not zero vector)
         if (newDirection.length() < 0.01) {
@@ -250,13 +307,6 @@ function Mycelium({
     if (newGrowthParticles.length > 0) {
       console.log(`🌱 Growing ${newGrowthParticles.length} new segments`)
       setCluster(prevCluster => [...prevCluster, ...newGrowthParticles])
-    }
-    
-    // Gentle rotation of the entire structure
-    if (instancedMeshRef.current) {
-      timeRef.current += 0.01
-      instancedMeshRef.current.rotation.y = timeRef.current * 0.1
-      instancedMeshRef.current.rotation.x = Math.sin(timeRef.current * 0.05) * 0.1
     }
   })
   

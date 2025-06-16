@@ -76,7 +76,7 @@ const VISUALIZERS = {
       stepSize: 0.9
     },
     canvasProps: {
-      cameraPosition: [0, 0, 17],
+      cameraPosition: [17, 0, 0], // Initial position - will be overridden by orbital movement
       ambientLightIntensity: 0.3,
       directionalLightIntensity: 0.1,
       enableControls: true
