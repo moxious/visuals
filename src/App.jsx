@@ -70,6 +70,7 @@ const CANVAS_CONFIGS = {
 function App() {
   const [selectedVisualizer, setSelectedVisualizer] = useState('pulseGeometry')
   const [configPanelVisible, setConfigPanelVisible] = useState(true)
+  const [configPanelCollapsed, setConfigPanelCollapsed] = useState(true) // Default to collapsed
   const [visualizerProps, setVisualizerProps] = useState({})
   const [isInitialized, setIsInitialized] = useState(false)
   
@@ -82,11 +83,12 @@ function App() {
       if (hasURLParameters()) {
         // Load from URL
         const urlParams = getCurrentURLParams()
-        const { visualizerKey, visualizerProps: urlProps } = decodeStateFromURL(urlParams)
+        const { visualizerKey, visualizerProps: urlProps, panelCollapsed } = decodeStateFromURL(urlParams)
         
-        console.log('🔗 Loading from URL:', { visualizerKey, urlProps })
+        console.log('🔗 Loading from URL:', { visualizerKey, urlProps, panelCollapsed })
         
         setSelectedVisualizer(visualizerKey)
+        setConfigPanelCollapsed(panelCollapsed)
         
         // Initialize all visualizer props
         const allProps = {}
@@ -112,7 +114,7 @@ function App() {
   }, [])
   
   // Update URL when state changes (debounced)
-  const updateURLDebounced = useCallback((visualizerKey, props) => {
+  const updateURLDebounced = useCallback((visualizerKey, props, panelCollapsed) => {
     // Clear existing timeout
     if (urlUpdateTimeoutRef.current) {
       clearTimeout(urlUpdateTimeoutRef.current)
@@ -120,8 +122,8 @@ function App() {
     
     // Set new timeout
     urlUpdateTimeoutRef.current = setTimeout(() => {
-      updateURL(visualizerKey, props, true)
-      console.log('🔗 URL updated for:', visualizerKey)
+      updateURL(visualizerKey, props, panelCollapsed, true)
+      console.log('🔗 URL updated for:', visualizerKey, 'panel collapsed:', panelCollapsed)
     }, 300) // 300ms debounce
   }, [])
   
@@ -130,9 +132,10 @@ function App() {
     const handlePopState = () => {
       console.log('🔄 Browser navigation detected, updating from URL')
       const urlParams = getCurrentURLParams()
-      const { visualizerKey, visualizerProps: urlProps } = decodeStateFromURL(urlParams)
+      const { visualizerKey, visualizerProps: urlProps, panelCollapsed } = decodeStateFromURL(urlParams)
       
       setSelectedVisualizer(visualizerKey)
+      setConfigPanelCollapsed(panelCollapsed)
       setVisualizerProps(prev => ({
         ...prev,
         [visualizerKey]: urlProps
@@ -143,15 +146,15 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
   
-  // Update URL when visualizer or props change
+  // Update URL when visualizer, props, or panel state change
   useEffect(() => {
     if (!isInitialized) return
     
     const currentProps = visualizerProps[selectedVisualizer]
     if (currentProps) {
-      updateURLDebounced(selectedVisualizer, currentProps)
+      updateURLDebounced(selectedVisualizer, currentProps, configPanelCollapsed)
     }
-  }, [selectedVisualizer, visualizerProps, isInitialized, updateURLDebounced])
+  }, [selectedVisualizer, visualizerProps, configPanelCollapsed, isInitialized, updateURLDebounced])
   
   const VisualizerComponent = VISUALIZER_COMPONENTS[selectedVisualizer]
   const canvasConfig = CANVAS_CONFIGS[selectedVisualizer] || {}
@@ -174,7 +177,7 @@ function App() {
   
   // Generate shareable URL
   const getShareableURL = () => {
-    return generateShareableURL(selectedVisualizer, currentProps)
+    return generateShareableURL(selectedVisualizer, currentProps, configPanelCollapsed)
   }
 
   // Don't render until initialized
@@ -205,6 +208,8 @@ function App() {
         isVisible={configPanelVisible}
         onToggleVisibility={() => setConfigPanelVisible(!configPanelVisible)}
         onGenerateShareURL={getShareableURL}
+        isCollapsed={configPanelCollapsed}
+        onToggleCollapsed={() => setConfigPanelCollapsed(!configPanelCollapsed)}
       />
 
       {/* Visualizer Selector */}

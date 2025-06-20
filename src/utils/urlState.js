@@ -7,13 +7,19 @@ const URL_PREFIX = 'v_'
  * Encode visualizer state to URL parameters
  * @param {string} visualizerKey - Current visualizer key
  * @param {Object} visualizerProps - Current visualizer properties
+ * @param {boolean} panelCollapsed - Whether the configuration panel is collapsed
  * @returns {URLSearchParams} - URL search parameters
  */
-export const encodeStateToURL = (visualizerKey, visualizerProps) => {
+export const encodeStateToURL = (visualizerKey, visualizerProps, panelCollapsed = true) => {
   const params = new URLSearchParams()
   
   // Set the visualizer type
   params.set('visualizer', visualizerKey)
+  
+  // Set panel collapsed state (only if not default collapsed state)
+  if (panelCollapsed !== true) {
+    params.set('panelCollapsed', panelCollapsed ? '1' : '0')
+  }
   
   // Get default props for comparison
   const defaults = getDefaultProps(visualizerKey)
@@ -58,18 +64,23 @@ export const encodeStateToURL = (visualizerKey, visualizerProps) => {
 /**
  * Decode URL parameters to visualizer state
  * @param {URLSearchParams} searchParams - URL search parameters
- * @returns {Object} - { visualizerKey, visualizerProps }
+ * @returns {Object} - { visualizerKey, visualizerProps, panelCollapsed }
  */
 export const decodeStateFromURL = (searchParams) => {
   // Get visualizer type
   const visualizerKey = searchParams.get('visualizer') || 'pulseGeometry'
+  
+  // Get panel collapsed state (default to true/collapsed)
+  const panelCollapsedParam = searchParams.get('panelCollapsed')
+  const panelCollapsed = panelCollapsedParam !== null ? panelCollapsedParam === '1' : true
   
   // Validate visualizer exists
   if (!VISUALIZER_CONFIGS[visualizerKey]) {
     console.warn(`Unknown visualizer '${visualizerKey}', falling back to pulseGeometry`)
     return {
       visualizerKey: 'pulseGeometry',
-      visualizerProps: getDefaultProps('pulseGeometry')
+      visualizerProps: getDefaultProps('pulseGeometry'),
+      panelCollapsed: panelCollapsed
     }
   }
   
@@ -128,7 +139,8 @@ export const decodeStateFromURL = (searchParams) => {
   
   return {
     visualizerKey,
-    visualizerProps
+    visualizerProps,
+    panelCollapsed
   }
 }
 
@@ -136,10 +148,11 @@ export const decodeStateFromURL = (searchParams) => {
  * Update the browser URL with current state
  * @param {string} visualizerKey - Current visualizer key
  * @param {Object} visualizerProps - Current visualizer properties
+ * @param {boolean} panelCollapsed - Whether the configuration panel is collapsed
  * @param {boolean} replaceState - Whether to replace current history entry
  */
-export const updateURL = (visualizerKey, visualizerProps, replaceState = true) => {
-  const params = encodeStateToURL(visualizerKey, visualizerProps)
+export const updateURL = (visualizerKey, visualizerProps, panelCollapsed = true, replaceState = true) => {
+  const params = encodeStateToURL(visualizerKey, visualizerProps, panelCollapsed)
   const newURL = `${window.location.pathname}?${params.toString()}`
   
   if (replaceState) {
@@ -161,10 +174,11 @@ export const getCurrentURLParams = () => {
  * Generate a shareable URL for current state
  * @param {string} visualizerKey - Current visualizer key
  * @param {Object} visualizerProps - Current visualizer properties
+ * @param {boolean} panelCollapsed - Whether the configuration panel is collapsed
  * @returns {string} - Complete shareable URL
  */
-export const generateShareableURL = (visualizerKey, visualizerProps) => {
-  const params = encodeStateToURL(visualizerKey, visualizerProps)
+export const generateShareableURL = (visualizerKey, visualizerProps, panelCollapsed = true) => {
+  const params = encodeStateToURL(visualizerKey, visualizerProps, panelCollapsed)
   return `${window.location.origin}${window.location.pathname}?${params.toString()}`
 }
 

@@ -255,6 +255,15 @@ export const VISUALIZER_CONFIGS = {
         step: 0.5,
         label: 'Orbit Radius',
         description: 'Distance of camera from center during orbital movement'
+      },
+      regenerationInterval: {
+        type: 'number',
+        default: 20,
+        min: 5,
+        max: 120,
+        step: 5,
+        label: 'Regeneration Interval',
+        description: 'Seconds before the network regenerates itself'
       }
     }
   },

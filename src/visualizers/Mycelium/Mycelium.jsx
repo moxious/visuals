@@ -23,6 +23,7 @@ function Mycelium({
   killRadius = 50,
   stepSize = 0.9,
   orbitRadius = 8,
+  regenerationInterval = 20,
   ...props 
 }) {
   const instancedMeshRef = useRef()
@@ -464,15 +465,15 @@ function Mycelium({
     console.log('📷 Reset camera position:', camera.position.toArray(), 'with orbitRadius:', orbitRadius)
   }, [orbitRadius, camera, stepSize])
   
-  // Auto-restart every 20 seconds
+  // Auto-restart based on configured interval
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('⏰ 20-second cycle complete - restarting with new seed')
+      console.log(`⏰ ${regenerationInterval}-second cycle complete - restarting with new seed`)
       resetGrowth()
-    }, 20000) // 20 seconds
+    }, regenerationInterval * 1000) // Convert seconds to milliseconds
     
     return () => clearInterval(interval)
-  }, [resetGrowth])
+  }, [resetGrowth, regenerationInterval])
   
   // Stop growth when max particles reached, but don't auto-reset (let timer handle it)
   useEffect(() => {

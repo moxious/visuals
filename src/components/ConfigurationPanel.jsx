@@ -93,10 +93,11 @@ function ConfigurationPanel({
   onPropsChange,
   isVisible,
   onToggleVisibility,
-  onGenerateShareURL 
+  onGenerateShareURL,
+  isCollapsed,
+  onToggleCollapsed
 }) {
   const [localProps, setLocalProps] = useState(currentProps)
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [shareMessage, setShareMessage] = useState('')
   
   const config = VISUALIZER_CONFIGS[visualizerKey]
@@ -177,7 +178,7 @@ function ConfigurationPanel({
           </button>
           <button
             className="config-action-button"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={onToggleCollapsed}
             title={isCollapsed ? "Expand" : "Collapse"}
           >
             {isCollapsed ? '📋' : '➖'}
