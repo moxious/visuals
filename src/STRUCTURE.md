@@ -156,6 +156,38 @@ function App() {
 - **Interactive Controls**: Mouse controls enabled for click & drag rotation and scroll zoom
 - **No Disappearing**: All shapes have minimum thickness to remain visible when rotating
 
+### PulseGeometry
+- **File**: `src/visualizers/PulseGeometry/PulseGeometry.jsx`
+- **Features**: 3D dodecahedron with triple-layered pulsing: individual spheres, colors, and geometry expansion
+- **Props**:
+  - `position` - 3D position array (default: [0, 0, 0])
+  - `shape` - Geometry type: 'dodecahedron' (default, more shapes planned)
+  - `maxSpheres` - Maximum number of spheres to render (default: 2000)
+  - `colorStrategy` - Color approach: 'solid', 'cyberpunk' (default: 'solid')
+  - `baseColor` - Primary color for spheres (default: '#ffffff')
+  - `sphereSize` - Size of individual spheres (default: 0.02)
+  - `scale` - Overall scale of the geometry (default: 1)
+  - `orbitSpeed` - Camera orbital rotation speed (default: 0.1)
+  - `orbitRadius` - Orbital distance from center (default: 8)
+  - `orbitHeight` - Vertical oscillation amplitude (default: 2)
+  - `edgeDensity` - Spacing between spheres along edges (default: 0.15)
+  - `enablePulsing` - Enable individual sphere size pulsing (default: true)
+  - `perspectiveChangeInterval` - Seconds between camera perspective changes (default: 3)
+  - `enableColorPulsing` - Enable cyberpunk color pulsing (default: true)
+  - `colorTransitionTime` - Seconds to transition between colors (default: 4)
+  - `infectionChance` - Probability (0-1) of color infection per cycle (default: 0.1)
+  - `enableGeometryPulsing` - Enable figure-wide expansion pulsing (default: true)
+  - `geometryPulseAmount` - Expansion factor for geometry pulsing (default: 0.4 = 40%)
+
+**Animation Features**:
+- **Individual Size Pulsing**: Each sphere pulses between 0.05 and 0.10 unit diameter (2-5 second cycles)
+- **Cyberpunk Color Pulsing**: Each sphere oscillates between two random cyberpunk colors (4-second cycles)
+- **Color Infection**: 10% chance per cycle that adjacent spheres copy each other's colors, creating organic spreading
+- **Geometry Expansion**: Entire figure pulses outward with vertices expanding 40% from origin (3-5 second cycles per vertex)
+- **Connected Motion**: Edge and face spheres move dynamically to maintain structure as vertices pulse
+- **Dynamic Perspectives**: Camera orbit changes angles every 3 seconds, revealing novel facets
+- **Multi-layered Timing**: Individual, color, and geometry pulsing all operate on independent cycles
+
 ## Examples
 
 See `src/scenes/` for example scene configurations:

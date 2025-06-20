@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import VisualizerCanvas from './components/VisualizerCanvas'
-import { Pyramid, StarField, AlienTerrain } from './visualizers'
+import { Pyramid, StarField, AlienTerrain, PulseGeometry } from './visualizers'
 import HopalongAttractor from './visualizers/HopalongAttractor/HopalongAttractor'
 import Mycelium from './visualizers/Mycelium/Mycelium'
 import './App.css'
@@ -81,11 +81,43 @@ const VISUALIZERS = {
       directionalLightIntensity: 0.1,
       enableControls: true
     }
+  },
+  pulseGeometry: {
+    name: 'Pulse Geometry',
+    component: PulseGeometry,
+    props: {
+      position: [0, 0, 0],
+      shape: 'dodecahedron',
+      maxSpheres: 2000,
+      colorStrategy: 'cyberpunk',
+      baseColor: '#ffffff',
+      sphereSize: 0.025,
+      scale: 2,
+      orbitSpeed: 0.08,
+      orbitRadius: 4,
+      orbitHeight: 3,
+      edgeDensity: 0.12,
+      enablePulsing: true,
+      perspectiveChangeInterval: 3,
+      enableColorPulsing: true,
+      colorTransitionTime: 4,
+      infectionChance: 0.1,
+      enableGeometryPulsing: true,
+      geometryPulseAmount: 0.4
+    },
+    canvasProps: {
+      cameraPosition: [8, 2, 8], // Initial position - will be overridden by orbital movement
+      ambientLightIntensity: 0.4,
+      directionalLightIntensity: 0.8,
+      directionalLightPosition: [10, 10, 5],
+      pointLightIntensity: 0.3,
+      enableControls: false // Disable controls since we have automatic camera movement
+    }
   }
 }
 
 function App() {
-  const [selectedVisualizer, setSelectedVisualizer] = useState('mycelium')
+  const [selectedVisualizer, setSelectedVisualizer] = useState('pulseGeometry')
   
   const currentVisualizer = VISUALIZERS[selectedVisualizer]
   const VisualizerComponent = currentVisualizer.component
