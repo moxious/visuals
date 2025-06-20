@@ -262,6 +262,31 @@
   color: #ffffff;
 }
 
+/* Share Message */
+.config-share-message {
+  padding: 8px 20px;
+  background: rgba(97, 218, 251, 0.1);
+  border-top: 1px solid rgba(97, 218, 251, 0.3);
+  border-bottom: 1px solid rgba(100, 120, 150, 0.2);
+  color: #61dafb;
+  font-size: 12px;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Footer */
 .config-footer {
   padding: 12px 20px;

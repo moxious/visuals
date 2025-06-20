@@ -92,10 +92,12 @@ function ConfigurationPanel({
   currentProps, 
   onPropsChange,
   isVisible,
-  onToggleVisibility 
+  onToggleVisibility,
+  onGenerateShareURL 
 }) {
   const [localProps, setLocalProps] = useState(currentProps)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [shareMessage, setShareMessage] = useState('')
   
   const config = VISUALIZER_CONFIGS[visualizerKey]
   
@@ -121,6 +123,31 @@ function ConfigurationPanel({
     onPropsChange(defaultProps)
   }
   
+  // Handle share URL generation
+  const handleShare = async () => {
+    if (!onGenerateShareURL) return
+    
+    try {
+      const shareableURL = onGenerateShareURL()
+      
+      // Try to copy to clipboard
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareableURL)
+        setShareMessage('✅ URL copied to clipboard!')
+      } else {
+        // Fallback for older browsers or non-HTTPS
+        setShareMessage(`📋 Copy this URL: ${shareableURL}`)
+      }
+      
+      // Clear message after 3 seconds
+      setTimeout(() => setShareMessage(''), 3000)
+    } catch (error) {
+      console.error('Failed to copy URL:', error)
+      setShareMessage('❌ Failed to copy URL')
+      setTimeout(() => setShareMessage(''), 3000)
+    }
+  }
+  
   if (!isVisible || !config) {
     return (
       <button 
@@ -141,6 +168,13 @@ function ConfigurationPanel({
           <p className="config-description">{config.description}</p>
         </div>
         <div className="config-actions">
+          <button
+            className="config-action-button"
+            onClick={handleShare}
+            title="Share Configuration URL"
+          >
+            🔗
+          </button>
           <button
             className="config-action-button"
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -164,6 +198,12 @@ function ConfigurationPanel({
           </button>
         </div>
       </div>
+      
+      {shareMessage && (
+        <div className="config-share-message">
+          {shareMessage}
+        </div>
+      )}
       
       {!isCollapsed && (
         <div className="config-content">

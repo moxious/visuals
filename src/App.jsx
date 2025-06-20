@@ -1,10 +1,17 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import VisualizerCanvas from './components/VisualizerCanvas'
 import ConfigurationPanel from './components/ConfigurationPanel'
 import { Pyramid, StarField, AlienTerrain, PulseGeometry } from './visualizers'
 import HopalongAttractor from './visualizers/HopalongAttractor/HopalongAttractor'
 import Mycelium from './visualizers/Mycelium/Mycelium'
 import { getDefaultProps, VISUALIZER_CONFIGS } from './config/visualizerConfigs'
+import { 
+  decodeStateFromURL, 
+  updateURL, 
+  getCurrentURLParams, 
+  hasURLParameters,
+  generateShareableURL 
+} from './utils/urlState'
 import './App.css'
 
 // Component mapping for visualizers
@@ -63,15 +70,88 @@ const CANVAS_CONFIGS = {
 function App() {
   const [selectedVisualizer, setSelectedVisualizer] = useState('pulseGeometry')
   const [configPanelVisible, setConfigPanelVisible] = useState(true)
+  const [visualizerProps, setVisualizerProps] = useState({})
+  const [isInitialized, setIsInitialized] = useState(false)
   
-  // Initialize visualizer props with defaults
-  const [visualizerProps, setVisualizerProps] = useState(() => {
-    const initialProps = {}
-    Object.keys(VISUALIZER_COMPONENTS).forEach(key => {
-      initialProps[key] = getDefaultProps(key)
-    })
-    return initialProps
-  })
+  // Debounce URL updates to avoid excessive history entries
+  const urlUpdateTimeoutRef = useRef(null)
+  
+  // Initialize state from URL or defaults
+  useEffect(() => {
+    const initializeFromURL = () => {
+      if (hasURLParameters()) {
+        // Load from URL
+        const urlParams = getCurrentURLParams()
+        const { visualizerKey, visualizerProps: urlProps } = decodeStateFromURL(urlParams)
+        
+        console.log('🔗 Loading from URL:', { visualizerKey, urlProps })
+        
+        setSelectedVisualizer(visualizerKey)
+        
+        // Initialize all visualizer props
+        const allProps = {}
+        Object.keys(VISUALIZER_COMPONENTS).forEach(key => {
+          allProps[key] = key === visualizerKey ? urlProps : getDefaultProps(key)
+        })
+        setVisualizerProps(allProps)
+      } else {
+        // Load defaults
+        console.log('📋 Loading default configuration')
+        
+        const defaultProps = {}
+        Object.keys(VISUALIZER_COMPONENTS).forEach(key => {
+          defaultProps[key] = getDefaultProps(key)
+        })
+        setVisualizerProps(defaultProps)
+      }
+      
+      setIsInitialized(true)
+    }
+    
+    initializeFromURL()
+  }, [])
+  
+  // Update URL when state changes (debounced)
+  const updateURLDebounced = useCallback((visualizerKey, props) => {
+    // Clear existing timeout
+    if (urlUpdateTimeoutRef.current) {
+      clearTimeout(urlUpdateTimeoutRef.current)
+    }
+    
+    // Set new timeout
+    urlUpdateTimeoutRef.current = setTimeout(() => {
+      updateURL(visualizerKey, props, true)
+      console.log('🔗 URL updated for:', visualizerKey)
+    }, 300) // 300ms debounce
+  }, [])
+  
+  // Handle browser navigation (back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      console.log('🔄 Browser navigation detected, updating from URL')
+      const urlParams = getCurrentURLParams()
+      const { visualizerKey, visualizerProps: urlProps } = decodeStateFromURL(urlParams)
+      
+      setSelectedVisualizer(visualizerKey)
+      setVisualizerProps(prev => ({
+        ...prev,
+        [visualizerKey]: urlProps
+      }))
+    }
+    
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+  
+  // Update URL when visualizer or props change
+  useEffect(() => {
+    if (!isInitialized) return
+    
+    const currentProps = visualizerProps[selectedVisualizer]
+    if (currentProps) {
+      updateURLDebounced(selectedVisualizer, currentProps)
+    }
+  }, [selectedVisualizer, visualizerProps, isInitialized, updateURLDebounced])
   
   const VisualizerComponent = VISUALIZER_COMPONENTS[selectedVisualizer]
   const canvasConfig = CANVAS_CONFIGS[selectedVisualizer] || {}
@@ -80,8 +160,7 @@ function App() {
   // Handle visualizer change
   const handleVisualizerChange = (newVisualizer) => {
     setSelectedVisualizer(newVisualizer)
-    // Optionally reset config panel visibility when switching
-    // setConfigPanelVisible(true)
+    console.log('🎨 Visualizer changed to:', newVisualizer)
   }
 
   // Handle props change from configuration panel
@@ -90,6 +169,30 @@ function App() {
       ...prev,
       [selectedVisualizer]: newProps
     }))
+    console.log('⚙️ Props updated for:', selectedVisualizer)
+  }
+  
+  // Generate shareable URL
+  const getShareableURL = () => {
+    return generateShareableURL(selectedVisualizer, currentProps)
+  }
+
+  // Don't render until initialized
+  if (!isInitialized) {
+    return (
+      <div className="app">
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          color: '#61dafb',
+          fontSize: '18px'
+        }}>
+          Loading visualization...
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -101,6 +204,7 @@ function App() {
         onPropsChange={handlePropsChange}
         isVisible={configPanelVisible}
         onToggleVisibility={() => setConfigPanelVisible(!configPanelVisible)}
+        onGenerateShareURL={getShareableURL}
       />
 
       {/* Visualizer Selector */}
