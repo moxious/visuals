@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect, useState } from 'react'
+import React, { useRef, useMemo, useEffect, useState, useCallback } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -22,7 +22,7 @@ function Mycelium({
   maxParticles = 5000,
   killRadius = 50,
   stepSize = 0.9,
-  orbitRadius = 12,
+  orbitRadius = 8,
   ...props 
 }) {
   const instancedMeshRef = useRef()
@@ -31,20 +31,48 @@ function Mycelium({
   const [isGrowing, setIsGrowing] = useState(true)
   const { camera } = useThree() // Access to the camera for orbital movement
   
-  // Create new seed with random direction
+  // Create new seed with random direction and some initial growth for immediate visibility
   const createNewSeed = () => {
-    return [{
+    const seedParticles = []
+    
+    // Root particle at center
+    const root = {
       position: new THREE.Vector3(0, 0, 0),
       id: 0,
       generation: 0,
-      isGrowingTip: true,
-      growthDirection: new THREE.Vector3(
+      isGrowingTip: false, // Root doesn't grow
+      growthDirection: new THREE.Vector3(0, 1, 0),
+      parent: null
+    }
+    seedParticles.push(root)
+    
+    // Create 3-5 initial branches from root for immediate visibility
+    const numInitialBranches = 3 + Math.floor(Math.random() * 3) // 3-5 branches
+    
+    for (let i = 0; i < numInitialBranches; i++) {
+      const direction = new THREE.Vector3(
         (Math.random() - 0.5) * 2,
         (Math.random() - 0.5) * 2,
         (Math.random() - 0.5) * 2
-      ).normalize(),
-      parent: null // Root has no parent
-    }]
+      ).normalize()
+      
+      const distance = stepSize * (1.5 + Math.random() * 1) // Initial branch length
+      const position = direction.clone().multiplyScalar(distance)
+      
+      const branch = {
+        position: position,
+        id: i + 1,
+        generation: 1,
+        isGrowingTip: true,
+        growthDirection: direction.clone(),
+        parent: 0 // Connected to root
+      }
+      
+      seedParticles.push(branch)
+    }
+    
+    console.log(`🌱 Created seed with ${seedParticles.length} initial particles (${numInitialBranches} branches)`)
+    return seedParticles
   }
 
   // Initialize with seed particle at center
@@ -73,15 +101,31 @@ function Mycelium({
     console.log('🌱 Mycelium: Initialized with new seed cluster')
     console.log('📷 Camera position:', camera.position.toArray(), 'looking at origin')
     console.log('⚙️ Config: orbitRadius =', orbitRadius, 'maxParticles =', maxParticles, 'killRadius =', killRadius)
-  }, [seedCluster, camera])
+  }, [seedCluster, camera, orbitRadius])
+  
+  // Separate effect to handle orbitRadius changes
+  useEffect(() => {
+    // Update camera position when orbitRadius changes (e.g., from URL loading)
+    const currentOrbitTime = timeRef.current * 0.075
+    const currentVerticalTime = timeRef.current * 0.03
+    
+    const x = Math.cos(currentOrbitTime) * orbitRadius
+    const z = Math.sin(currentOrbitTime) * orbitRadius  
+    const y = Math.sin(currentVerticalTime) * 3 + 2
+    
+    camera.position.set(x, y, z)
+    camera.lookAt(0, 0, 0)
+    
+    console.log('📏 Orbit radius changed to:', orbitRadius, '- updated camera position:', camera.position.toArray())
+  }, [orbitRadius, camera])
   
   // Create geometry and material for tubes
   const { geometry, material } = useMemo(() => {
     // Cylinder geometry - will be positioned and scaled for each tube
-    const geometry = new THREE.CylinderGeometry(0.035, 0.035, 1, 6) // Slightly thicker tubes for better visibility
+    const geometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 8) // Even thicker tubes, more segments for better visibility
     const material = new THREE.MeshBasicMaterial({
       transparent: true,
-      opacity: 0.9,
+      opacity: 1.0, // Full opacity for better visibility
       blending: THREE.AdditiveBlending
     })
     return { geometry, material }
@@ -156,8 +200,15 @@ function Mycelium({
       if (instancedMeshRef.current.instanceColor) {
         instancedMeshRef.current.instanceColor.needsUpdate = true
       }
+      
+      // Debug: Log visible tubes count
+      if (tubeIndex > 0) {
+        console.log(`🔗 Updated ${tubeIndex} visible tubes from ${cluster.length} particles`)
+      }
+    } else if (cluster.length > 0) {
+      console.log(`⚠️ Mesh not ready but have ${cluster.length} particles in cluster`)
     }
-  }, [cluster, maxParticles])
+  }, [cluster, maxParticles, isGrowing])
   
   // Continuous growth simulation
   useFrame(() => {
@@ -386,7 +437,7 @@ function Mycelium({
   })
   
   // Reset and restart growth with new seed
-  const resetGrowth = () => {
+  const resetGrowth = useCallback(() => {
     const newSeed = createNewSeed()
     setSeedCluster(newSeed)
     setCluster(newSeed)
@@ -398,7 +449,7 @@ function Mycelium({
     // Reset time with new random orbital position
     timeRef.current = Math.random() * Math.PI * 2
     
-    // Set new camera position immediately
+    // Set new camera position immediately with current orbitRadius
     const initialOrbitTime = timeRef.current * 0.075
     const initialVerticalTime = timeRef.current * 0.03
     
@@ -410,8 +461,8 @@ function Mycelium({
     camera.lookAt(0, 0, 0)
     
     console.log('🔄 Mycelium: Complete reset - new random seed direction started')
-    console.log('📷 Reset camera position:', camera.position.toArray())
-  }
+    console.log('📷 Reset camera position:', camera.position.toArray(), 'with orbitRadius:', orbitRadius)
+  }, [orbitRadius, camera, stepSize])
   
   // Auto-restart every 20 seconds
   useEffect(() => {
@@ -421,7 +472,7 @@ function Mycelium({
     }, 20000) // 20 seconds
     
     return () => clearInterval(interval)
-  }, [])
+  }, [resetGrowth])
   
   // Stop growth when max particles reached, but don't auto-reset (let timer handle it)
   useEffect(() => {

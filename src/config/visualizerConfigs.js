@@ -249,9 +249,9 @@ export const VISUALIZER_CONFIGS = {
       },
       orbitRadius: {
         type: 'number',
-        default: 12,
-        min: 5,
-        max: 30,
+        default: 8,
+        min: 3,
+        max: 25,
         step: 0.5,
         label: 'Orbit Radius',
         description: 'Distance of camera from center during orbital movement'

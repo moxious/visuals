@@ -52,7 +52,7 @@ const CANVAS_CONFIGS = {
     enableControls: true
   },
   mycelium: {
-    cameraPosition: [12, 2, 0],
+    cameraPosition: [8, 2, 0],
     ambientLightIntensity: 0.3,
     directionalLightIntensity: 0.1,
     enableControls: true
