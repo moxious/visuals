@@ -205,32 +205,13 @@ function App() {
         visualizerKey={selectedVisualizer}
         currentProps={currentProps}
         onPropsChange={handlePropsChange}
+        onVisualizerChange={handleVisualizerChange}
         isVisible={configPanelVisible}
         onToggleVisibility={() => setConfigPanelVisible(!configPanelVisible)}
         onGenerateShareURL={getShareableURL}
         isCollapsed={configPanelCollapsed}
         onToggleCollapsed={() => setConfigPanelCollapsed(!configPanelCollapsed)}
       />
-
-      {/* Visualizer Selector */}
-      <div className="visualizer-selector">
-        <label htmlFor="visualizer-select">Visualizer: </label>
-        <select 
-          id="visualizer-select"
-          value={selectedVisualizer}
-          onChange={(e) => handleVisualizerChange(e.target.value)}
-        >
-          {Object.keys(VISUALIZER_COMPONENTS).map(key => {
-            // Get name from config metadata
-            const config = VISUALIZER_CONFIGS[key]
-            return (
-              <option key={key} value={key}>
-                {config?.name || key}
-              </option>
-            )
-          })}
-        </select>
-      </div>
 
       <VisualizerCanvas {...canvasConfig}>
         <VisualizerComponent {...currentProps} />

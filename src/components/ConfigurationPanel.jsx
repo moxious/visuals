@@ -91,6 +91,7 @@ function ConfigurationPanel({
   visualizerKey, 
   currentProps, 
   onPropsChange,
+  onVisualizerChange,
   isVisible,
   onToggleVisibility,
   onGenerateShareURL,
@@ -208,6 +209,29 @@ function ConfigurationPanel({
       
       {!isCollapsed && (
         <div className="config-content">
+          {/* Visualizer Selector */}
+          <div className="visualizer-selector-section">
+            <div className="control-group">
+              <label className="control-label">
+                Active Visualizer
+              </label>
+              <select
+                value={visualizerKey}
+                onChange={(e) => onVisualizerChange(e.target.value)}
+                className="select-input visualizer-select"
+              >
+                {Object.keys(VISUALIZER_CONFIGS).map(key => {
+                  const config = VISUALIZER_CONFIGS[key]
+                  return (
+                    <option key={key} value={key}>
+                      {config?.name || key}
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+          </div>
+          
           <div className="parameter-groups">
             {Object.entries(config.parameters).map(([paramKey, param]) => {
               const value = localProps[paramKey] ?? param.default
