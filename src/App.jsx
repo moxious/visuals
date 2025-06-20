@@ -46,7 +46,7 @@ const CANVAS_CONFIGS = {
     enableControls: true
   },
   hopalongAttractor: {
-    cameraPosition: [0, 0, 25],
+    cameraPosition: [0, 0, 37.5], // Default pulled back by 50%
     ambientLightIntensity: 0.8,
     directionalLightIntensity: 0.2,
     enableControls: true
@@ -157,8 +157,24 @@ function App() {
   }, [selectedVisualizer, visualizerProps, configPanelCollapsed, isInitialized, updateURLDebounced])
   
   const VisualizerComponent = VISUALIZER_COMPONENTS[selectedVisualizer]
-  const canvasConfig = CANVAS_CONFIGS[selectedVisualizer] || {}
   const currentProps = visualizerProps[selectedVisualizer] || {}
+  
+  // Get canvas config and apply dynamic parameters
+  const getCanvasConfig = () => {
+    const baseConfig = CANVAS_CONFIGS[selectedVisualizer] || {}
+    
+    // Apply dynamic camera positioning for HopalongAttractor
+    if (selectedVisualizer === 'hopalongAttractor' && currentProps.cameraDistance !== undefined) {
+      return {
+        ...baseConfig,
+        cameraPosition: [0, 0, currentProps.cameraDistance]
+      }
+    }
+    
+    return baseConfig
+  }
+  
+  const canvasConfig = getCanvasConfig()
 
   // Handle visualizer change
   const handleVisualizerChange = (newVisualizer) => {

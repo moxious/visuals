@@ -212,6 +212,15 @@ export const VISUALIZER_CONFIGS = {
         step: 10000,
         label: 'Iterations',
         description: 'Mathematical iterations for point generation'
+      },
+      cameraDistance: {
+        type: 'number',
+        default: 37.5,
+        min: 10,
+        max: 100,
+        step: 2.5,
+        label: 'Camera Distance',
+        description: 'Distance of camera from the attractor center'
       }
     }
   },
