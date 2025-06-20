@@ -1,147 +1,130 @@
 import React, { useState } from 'react'
 import VisualizerCanvas from './components/VisualizerCanvas'
+import ConfigurationPanel from './components/ConfigurationPanel'
 import { Pyramid, StarField, AlienTerrain, PulseGeometry } from './visualizers'
 import HopalongAttractor from './visualizers/HopalongAttractor/HopalongAttractor'
 import Mycelium from './visualizers/Mycelium/Mycelium'
+import { getDefaultProps, VISUALIZER_CONFIGS } from './config/visualizerConfigs'
 import './App.css'
 
-const VISUALIZERS = {
+// Component mapping for visualizers
+const VISUALIZER_COMPONENTS = {
+  pyramid: Pyramid,
+  starField: StarField,
+  alienTerrain: AlienTerrain,
+  hopalongAttractor: HopalongAttractor,
+  mycelium: Mycelium,
+  pulseGeometry: PulseGeometry
+}
+
+// Canvas configuration for each visualizer
+const CANVAS_CONFIGS = {
   pyramid: {
-    name: 'Pyramid',
-    component: Pyramid,
-    props: {},
-    canvasProps: {
-      cameraPosition: [3, 3, 3],
-      ambientLightIntensity: 0.5,
-      directionalLightIntensity: 1,
-      enableControls: true
-    }
+    cameraPosition: [3, 3, 3],
+    ambientLightIntensity: 0.5,
+    directionalLightIntensity: 1,
+    enableControls: true
   },
   starField: {
-    name: 'StarField',
-    component: StarField,
-    props: {
-      starCount: 8000,
-      spread: 150,
-      starSize: 1.5,
-      speed: 0.8,
-      cameraPath: "forward"
-    },
-    canvasProps: {
-      cameraPosition: [0, 0, 0],
-      ambientLightIntensity: 0.1,
-      directionalLightIntensity: 0.3,
-      enableControls: true
-    }
+    cameraPosition: [0, 0, 0],
+    ambientLightIntensity: 0.1,
+    directionalLightIntensity: 0.3,
+    enableControls: true
   },
   alienTerrain: {
-    name: 'AlienTerrain',
-    component: AlienTerrain,
-    props: {
-      speed: 0.3,
-      layerThickness: 25,
-      layerSpacing: 30,
-      shapesPerLayer: 75
-    },
-    canvasProps: {
-      cameraPosition: [0, 0, 0],
-      ambientLightIntensity: 0.2,
-      directionalLightIntensity: 0.6,
-      directionalLightPosition: [5, 5, 5],
-      enableControls: true
-    }
+    cameraPosition: [0, 0, 0],
+    ambientLightIntensity: 0.2,
+    directionalLightIntensity: 0.6,
+    directionalLightPosition: [5, 5, 5],
+    enableControls: true
   },
   hopalongAttractor: {
-    name: 'Hopalong Attractor',
-    component: HopalongAttractor,
-    props: {
-      pointCount: 50000,
-      speed: 0.5,
-      scale: 0.8,
-      iterations: 100000
-    },
-    canvasProps: {
-      cameraPosition: [0, 0, 25],
-      ambientLightIntensity: 0.8,
-      directionalLightIntensity: 0.2,
-      enableControls: true
-    }
+    cameraPosition: [0, 0, 25],
+    ambientLightIntensity: 0.8,
+    directionalLightIntensity: 0.2,
+    enableControls: true
   },
   mycelium: {
-    name: 'Mycelium',
-    component: Mycelium,
-    props: {
-      maxParticles: 5000,
-      killRadius: 50,
-      stepSize: 0.9
-    },
-    canvasProps: {
-      cameraPosition: [17, 0, 0], // Initial position - will be overridden by orbital movement
-      ambientLightIntensity: 0.3,
-      directionalLightIntensity: 0.1,
-      enableControls: true
-    }
+    cameraPosition: [12, 2, 0],
+    ambientLightIntensity: 0.3,
+    directionalLightIntensity: 0.1,
+    enableControls: true
   },
   pulseGeometry: {
-    name: 'Pulse Geometry',
-    component: PulseGeometry,
-    props: {
-      position: [0, 0, 0],
-      shape: 'dodecahedron',
-      maxSpheres: 2000,
-      colorStrategy: 'cyberpunk',
-      baseColor: '#ffffff',
-      sphereSize: 0.025,
-      scale: 2,
-      orbitSpeed: 0.08,
-      orbitRadius: 4,
-      orbitHeight: 3,
-      edgeDensity: 0.12,
-      enablePulsing: true,
-      perspectiveChangeInterval: 3,
-      enableColorPulsing: true,
-      colorTransitionTime: 4,
-      infectionChance: 0.1,
-      enableGeometryPulsing: true,
-      geometryPulseAmount: 0.4
-    },
-    canvasProps: {
-      cameraPosition: [8, 2, 8], // Initial position - will be overridden by orbital movement
-      ambientLightIntensity: 0.4,
-      directionalLightIntensity: 0.8,
-      directionalLightPosition: [10, 10, 5],
-      pointLightIntensity: 0.3,
-      enableControls: false // Disable controls since we have automatic camera movement
-    }
+    cameraPosition: [8, 2, 8],
+    ambientLightIntensity: 0.4,
+    directionalLightIntensity: 0.8,
+    directionalLightPosition: [10, 10, 5],
+    pointLightIntensity: 0.3,
+    enableControls: false
   }
 }
 
 function App() {
   const [selectedVisualizer, setSelectedVisualizer] = useState('pulseGeometry')
+  const [configPanelVisible, setConfigPanelVisible] = useState(true)
   
-  const currentVisualizer = VISUALIZERS[selectedVisualizer]
-  const VisualizerComponent = currentVisualizer.component
+  // Initialize visualizer props with defaults
+  const [visualizerProps, setVisualizerProps] = useState(() => {
+    const initialProps = {}
+    Object.keys(VISUALIZER_COMPONENTS).forEach(key => {
+      initialProps[key] = getDefaultProps(key)
+    })
+    return initialProps
+  })
+  
+  const VisualizerComponent = VISUALIZER_COMPONENTS[selectedVisualizer]
+  const canvasConfig = CANVAS_CONFIGS[selectedVisualizer] || {}
+  const currentProps = visualizerProps[selectedVisualizer] || {}
+
+  // Handle visualizer change
+  const handleVisualizerChange = (newVisualizer) => {
+    setSelectedVisualizer(newVisualizer)
+    // Optionally reset config panel visibility when switching
+    // setConfigPanelVisible(true)
+  }
+
+  // Handle props change from configuration panel
+  const handlePropsChange = (newProps) => {
+    setVisualizerProps(prev => ({
+      ...prev,
+      [selectedVisualizer]: newProps
+    }))
+  }
 
   return (
     <div className="app">
+      {/* Configuration Panel */}
+      <ConfigurationPanel
+        visualizerKey={selectedVisualizer}
+        currentProps={currentProps}
+        onPropsChange={handlePropsChange}
+        isVisible={configPanelVisible}
+        onToggleVisibility={() => setConfigPanelVisible(!configPanelVisible)}
+      />
+
       {/* Visualizer Selector */}
       <div className="visualizer-selector">
         <label htmlFor="visualizer-select">Visualizer: </label>
         <select 
           id="visualizer-select"
           value={selectedVisualizer}
-          onChange={(e) => setSelectedVisualizer(e.target.value)}
+          onChange={(e) => handleVisualizerChange(e.target.value)}
         >
-          {Object.entries(VISUALIZERS).map(([key, visualizer]) => (
-            <option key={key} value={key}>
-              {visualizer.name}
-            </option>
-          ))}
+          {Object.keys(VISUALIZER_COMPONENTS).map(key => {
+            // Get name from config metadata
+            const config = VISUALIZER_CONFIGS[key]
+            return (
+              <option key={key} value={key}>
+                {config?.name || key}
+              </option>
+            )
+          })}
         </select>
       </div>
 
-      <VisualizerCanvas {...currentVisualizer.canvasProps}>
-        <VisualizerComponent {...currentVisualizer.props} />
+      <VisualizerCanvas {...canvasConfig}>
+        <VisualizerComponent {...currentProps} />
       </VisualizerCanvas>
     </div>
   )

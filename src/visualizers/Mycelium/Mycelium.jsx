@@ -22,10 +22,11 @@ function Mycelium({
   maxParticles = 5000,
   killRadius = 50,
   stepSize = 0.9,
+  orbitRadius = 12,
   ...props 
 }) {
   const instancedMeshRef = useRef()
-  const timeRef = useRef(0)
+  const timeRef = useRef(Math.random() * Math.PI * 2) // Start with random orbital position
   const [cluster, setCluster] = useState([])
   const [isGrowing, setIsGrowing] = useState(true)
   const { camera } = useThree() // Access to the camera for orbital movement
@@ -54,16 +55,30 @@ function Mycelium({
     frameCount: 0
   })
   
-  // Initialize cluster with seed
+  // Initialize cluster with seed and set initial camera position
   useEffect(() => {
     setCluster(seedCluster)
+    
+    // Set initial camera position for better visibility
+    const initialOrbitTime = timeRef.current * 0.075
+    const initialVerticalTime = timeRef.current * 0.03
+    
+    const x = Math.cos(initialOrbitTime) * orbitRadius
+    const z = Math.sin(initialOrbitTime) * orbitRadius  
+    const y = Math.sin(initialVerticalTime) * 3 + 2 // Slight upward bias
+    
+    camera.position.set(x, y, z)
+    camera.lookAt(0, 0, 0)
+    
     console.log('🌱 Mycelium: Initialized with new seed cluster')
-  }, [seedCluster])
+    console.log('📷 Camera position:', camera.position.toArray(), 'looking at origin')
+    console.log('⚙️ Config: orbitRadius =', orbitRadius, 'maxParticles =', maxParticles, 'killRadius =', killRadius)
+  }, [seedCluster, camera])
   
   // Create geometry and material for tubes
   const { geometry, material } = useMemo(() => {
     // Cylinder geometry - will be positioned and scaled for each tube
-    const geometry = new THREE.CylinderGeometry(0.02, 0.02, 1, 6) // Thin tubes, 1 unit tall, low detail
+    const geometry = new THREE.CylinderGeometry(0.035, 0.035, 1, 6) // Slightly thicker tubes for better visibility
     const material = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0.9,
@@ -156,7 +171,6 @@ function Mycelium({
     }
 
     // Slow orbital camera movement around the cluster - ALWAYS active
-    const orbitRadius = 17 // Distance from center (based on our current camera position)
     const orbitSpeed = 0.075 // Increased orbital speed by 50%
     const verticalDrift = 0.03 // Gentle up/down movement
     
@@ -166,7 +180,7 @@ function Mycelium({
     
     const x = Math.cos(orbitTime) * orbitRadius
     const z = Math.sin(orbitTime) * orbitRadius
-    const y = Math.sin(verticalTime) * 5 // Gentle vertical drift ±5 units
+    const y = Math.sin(verticalTime) * 3 + 2 // Reduced vertical drift with upward bias
     
     // Update camera position
     camera.position.set(x, y, z)
@@ -380,8 +394,23 @@ function Mycelium({
       frameCount: 0
     }
     setIsGrowing(true)
-    timeRef.current = 0
+    
+    // Reset time with new random orbital position
+    timeRef.current = Math.random() * Math.PI * 2
+    
+    // Set new camera position immediately
+    const initialOrbitTime = timeRef.current * 0.075
+    const initialVerticalTime = timeRef.current * 0.03
+    
+    const x = Math.cos(initialOrbitTime) * orbitRadius
+    const z = Math.sin(initialOrbitTime) * orbitRadius  
+    const y = Math.sin(initialVerticalTime) * 3 + 2
+    
+    camera.position.set(x, y, z)
+    camera.lookAt(0, 0, 0)
+    
     console.log('🔄 Mycelium: Complete reset - new random seed direction started')
+    console.log('📷 Reset camera position:', camera.position.toArray())
   }
   
   // Auto-restart every 20 seconds
